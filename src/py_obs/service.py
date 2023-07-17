@@ -12,7 +12,8 @@ async def service_wait(
     prj_name = project.name if isinstance(project, Project) else project
     pkg_name = package.name if isinstance(package, Package) else package
     # https://api.opensuse.org/apidocs/index#/Sources%20-%20Packages/post_source__project_name___package_name__cmd_waitservice
-    await osc.api_request(
-        f"/source/{prj_name}/{pkg_name}?cmd=waitservice",
-        method="POST",
-    )
+    # await osc.api_request(
+    #     f"/source/{prj_name}/{pkg_name}?cmd=waitservice",
+    #     method="POST",
+    # )
+    await osc.package.cmd(prj_name, pkg_name, "waitservice")

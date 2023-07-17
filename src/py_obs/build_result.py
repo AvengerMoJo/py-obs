@@ -68,13 +68,13 @@ async def fetch_build_result(
 ) -> list[BuildResult]:
     return (
         await BuildResultList.from_response(
-            await osc.api_request(
-                f"/build/{project_name}/_result",
+#             await osc.api_request(
+#                 f"/build/{project_name}/_result",
+            await osc.build.get(project=project_name, package=package_name,
                 params={
                     "view": "status",
                     "multibuild": "1",
                     "locallink": "1",
-                    "package": package_name,
                 },
             )
         )

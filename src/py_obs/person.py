@@ -78,13 +78,16 @@ class Group(MetaMixin):
 
 async def fetch_user(osc: Osc, username: str) -> User:
     return await User.from_response(
-        await osc.api_request(f"/person/{username}", method="GET")
+#         await osc.request(f"/person/{username}", method="GET")
+          await osc.users.get(userid=username)
     )
 
 
 async def fetch_group(osc: Osc, groupname: str) -> UserGroup:
     return await UserGroup.from_response(
-        await osc.api_request(f"/group/{groupname}", method="GET")
+#         await osc.api_request(f"/group/{groupname}", method="GET")
+        await osc.groups.get(groupname)
+        
     )
 
 

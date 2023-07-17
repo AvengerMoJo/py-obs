@@ -124,7 +124,8 @@ async def search_for_maintainers(
         params["filter"] = ",".join(roles)
 
     owners = await OwnerCollection.from_response(
-        await osc.api_request("/search/owner", method="GET", params=params)
+#         await osc.api_request("/search/owner", method="GET", params=params)
+        await osc.search.search(path="owner",  params=params)
     )
 
     pkg_maintainers = []
@@ -350,10 +351,11 @@ async def fetch_file_list(
         File(name=entry.name, md5_sum=entry.md5, size=entry.size, mtime=entry.mtime)
         for entry in (
             await _Directory.from_response(
-                await osc.api_request(
-                    route=f"/source/{prj_name}/{pkg_name}",
-                    params={"expand": "1"} if expand_links else None,
-                )
+#                 await osc.api_request(
+#                     route=f"/source/{prj_name}/{pkg_name}",
+#                     params={"expand": "1"} if expand_links else None,
+                await osc.packages.get_files(prj_name, pkg_name, expend=1)
+
             )
         ).entry
         if entry.name and entry.md5 and entry.size and entry.mtime
@@ -372,10 +374,10 @@ async def fetch_file_contents(
     fname = file.name if isinstance(file, File) else file
 
     return await (
-        await osc.api_request(
-            f"/source/{prj_name}/{pkg_name}/{fname}",
-            params={"expand": "1"} if expand_links else None,
-        )
+#         await osc.api_request(
+#             f"/source/{prj_name}/{pkg_name}/{fname}",
+#             params={"expand": "1"} if expand_links else None,
+        await osc.packages.get_file(project=prj_name, package=pkg_name,filename=fname, expand=True)
     ).read()
 
 
@@ -393,13 +395,14 @@ async def upload_file_contents(
     """
     prj_name, pkg_name = _prj_and_pkg_name(prj, pkg)
     fname = file.name if isinstance(file, File) else file
-
-    await osc.api_request(
-        f"/source/{prj_name}/{pkg_name}/{fname}",
-        method="PUT",
-        payload=new_contents,
-        params={"keeplink": "1" if keeplink else "0"},
-    )
+#     await osc.api_request(
+#         f"/source/{prj_name}/{pkg_name}/{fname}",
+#         method="PUT",
+#         payload=new_contents,
+#         params={"keeplink": "1" if keeplink else "0"},
+#     )
+#   osctiny has no keeplink parameter. 
+    await osc.packages.push_file(project=prj_name, package=pkg_name, filename=fname, data=new_contents)
 
 
 async def fetch_all_files(

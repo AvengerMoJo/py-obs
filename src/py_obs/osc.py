@@ -2,6 +2,7 @@ import aiohttp
 import dataclasses
 import os
 import typing
+from osctiny import Osc as osctiny
 
 from py_obs.logger import LOGGER
 
@@ -15,11 +16,9 @@ class ObsException(aiohttp.ClientResponseError):
 
 
 @dataclasses.dataclass
-class Osc:
-    username: str
-    password: str
+class Osc(osctiny):
 
-    api_url: str = "https://api.opensuse.org/"
+    url = "https://api.opensuse.org/"
 
     _session: aiohttp.ClientSession = dataclasses.field(
         default_factory=lambda: aiohttp.ClientSession()
@@ -31,7 +30,7 @@ class Osc:
             raise ValueError("environment variable OSC_USER is not set")
         if not (password := os.getenv("OSC_PASSWORD")):
             raise ValueError("environment variable OSC_PASSWORD is not set")
-        return Osc(username=username, password=password)
+        return Osc(url, username=username, password=password)
 
     async def api_request(
         self,
@@ -39,7 +38,8 @@ class Osc:
         payload: bytes | str | None = None,
         params: dict[str, str] | None = None,
         method: typing.Literal["GET", "POST", "PUT", "DELETE"] = "GET",
-    ) -> aiohttp.ClientResponse:
+#     ) -> aiohttp.ClientResponse:
+    ) -> lxml.objectify.ObjectifiedElement:
         LOGGER.debug(
             "Sending a %s request to %s with the parameters %s and the payload %s",
             method,
@@ -48,20 +48,24 @@ class Osc:
             payload,
         )
         try:
-            return await self._session.request(
-                method=method, params=params, url=route, data=payload
+            return await self.request(
+                url=route, method=method, data=payload, params=params
             )
-        except aiohttp.ClientResponseError as cre_exc:
-            raise ObsException(**cre_exc.__dict__) from cre_exc
+        except osctiny.utils.errors.OscError as error:
+            raise OSError("Osc requestion fail.")
 
-    def __post_init__(self) -> None:
-        self._session = aiohttp.ClientSession(
-            auth=aiohttp.BasicAuth(login=self.username, password=self.password),
-            raise_for_status=True,
-            base_url=self.api_url,
-            # https://github.com/openSUSE/open-build-service/issues/13737
-            headers={"Accept": "application/xml; charset=utf-8"},
-        )
+
+        # except aiohttp.ClientResponseError as cre_exc:
+            # raise ObsException(**cre_exc.__dict__) from cre_exc
+# 
+#     def __post_init__(self) -> None:
+#         self._session = aiohttp.ClientSession(
+#             auth=aiohttp.BasicAuth(login=self.username, password=self.password),
+#             raise_for_status=True,
+#             base_url=self.url,
+#             # https://github.com/openSUSE/open-build-service/issues/13737
+#             headers={"Accept": "application/xml; charset=utf-8"},
+#         )
 
     async def teardown(self) -> None:
-        await self._session.close()
+        await self.__del__
